@@ -152,43 +152,20 @@ export function CardStudio() {
           />
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div>
-            <label className="mb-2 block text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
-              Badge
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {BADGES.map((b) => (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => setBadge(b)}
-                  className={`rounded-full px-3.5 py-2 text-xs font-semibold tracking-wide transition ${
-                    badge === b
-                      ? "bg-ink text-primary-foreground"
-                      : "border border-border bg-card text-muted-foreground"
-                  }`}
-                >
-                  {b}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="mb-2 block text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
-              Avatar <span className="opacity-60">(optional)</span>
-            </label>
-            <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-border bg-card px-5 py-4 text-sm text-muted-foreground transition hover:border-primary hover:text-foreground">
-              <Upload className="h-4 w-4" />
-              {avatar ? "Change photo" : "Upload a photo"}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => onUpload(e.target.files?.[0])}
-              />
-            </label>
-          </div>
+        <div>
+          <label className="mb-2 block text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
+            Avatar <span className="opacity-60">(optional)</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-border bg-card px-5 py-4 text-sm text-muted-foreground transition hover:border-primary hover:text-foreground">
+            <Upload className="h-4 w-4" />
+            {avatar ? "Change photo" : "Upload a photo"}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => onUpload(e.target.files?.[0])}
+            />
+          </label>
         </div>
 
         <button
