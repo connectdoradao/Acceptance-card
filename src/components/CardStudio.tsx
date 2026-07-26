@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { toPng } from "html-to-image";
-import { Check, Copy, Download, Upload, Sparkles } from "lucide-react";
+import { Check, Copy, Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AcceptanceCard, type CardData } from "./AcceptanceCard";
 
@@ -24,7 +23,6 @@ export function CardStudio() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const exportCardRef = useRef<HTMLDivElement>(null);
 
   const data: CardData = { name, role, line, avatar, badge };
 
@@ -42,51 +40,6 @@ export function CardStudio() {
     const reader = new FileReader();
     reader.onload = () => setAvatar(String(reader.result));
     reader.readAsDataURL(file);
-  };
-
-  const waitForExportAssets = async (node: HTMLElement) => {
-    await document.fonts?.ready;
-    const images = Array.from(node.querySelectorAll("img"));
-    await Promise.all(
-      images.map(
-        (image) =>
-          new Promise<void>((resolve) => {
-            if (image.complete && image.naturalWidth > 0) {
-              resolve();
-              return;
-            }
-
-            image.onload = () => resolve();
-            image.onerror = () => resolve();
-          }),
-      ),
-    );
-  };
-
-  const download = async () => {
-    const node = exportCardRef.current ?? cardRef.current;
-    if (!node) return;
-    try {
-      await waitForExportAssets(node);
-      const cssWidth = node.getBoundingClientRect().width || 460;
-      const pixelRatio = Math.min(6, Math.max(3, 2400 / cssWidth));
-      const url = await toPng(node, {
-        pixelRatio,
-        cacheBust: true,
-        includeQueryParams: true,
-        backgroundColor: "transparent",
-        skipAutoScale: true,
-      });
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `gwy-acceptance-${(name || "card").trim().toLowerCase().replace(/\s+/g, "-")}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      toast.success("Your acceptance card is downloading ✨");
-    } catch {
-      toast.error("Couldn't export the card. Try again.");
-    }
   };
 
   const copy = async (key: string) => {
@@ -168,16 +121,6 @@ export function CardStudio() {
           </label>
         </div>
 
-        <button
-          type="button"
-          onClick={download}
-          className="group flex w-full items-center justify-center gap-3 rounded-full px-8 py-5 font-display text-lg tracking-wide uppercase text-primary-foreground transition hover:-translate-y-0.5"
-          style={{ background: "var(--gradient-sunset)", boxShadow: "var(--shadow-luxe)" }}
-        >
-          <Download className="h-5 w-5 transition group-hover:translate-y-0.5" />
-          Download your card
-        </button>
-
         <div className="space-y-3">
           <p className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
             Share captions
@@ -210,14 +153,6 @@ export function CardStudio() {
         <div style={{ containerType: "inline-size" }}>
           <AcceptanceCard data={data} innerRef={cardRef} />
         </div>
-      </div>
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed top-0 -left-[12000px] w-[460px]"
-        style={{ containerType: "inline-size" }}
-      >
-        <AcceptanceCard data={data} innerRef={exportCardRef} />
       </div>
     </div>
   );
