@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import { toPng } from "html-to-image";
-import { Check, Copy, Download, Upload, Sparkles } from "lucide-react";
+import { toBlob } from "html-to-image";
+import { Check, Copy, Download, Loader2, Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AcceptanceCard, type CardData } from "./AcceptanceCard";
 
@@ -23,6 +23,7 @@ export function CardStudio() {
   const [badge, setBadge] = useState(BADGES[0]);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const data: CardData = { name, role, line, avatar, badge };
@@ -82,29 +83,39 @@ Because something tells me… this is going to be special.`;
 
   const download = async () => {
     const node = cardRef.current;
-    if (!node) return;
+    if (!node || downloading) return;
+    setDownloading(true);
     try {
       await waitForExportAssets(node);
       const cssWidth = node.getBoundingClientRect().width || 460;
-      const pixelRatio = Math.min(6, Math.max(3, 2400 / cssWidth));
-      const url = await toPng(node, {
+      const pixelRatio = Math.min(4, Math.max(2, 2400 / cssWidth));
+      const blob = await toBlob(node, {
         pixelRatio,
-        width: cssWidth,
-        height: node.getBoundingClientRect().height,
         cacheBust: true,
-        includeQueryParams: true,
         backgroundColor: undefined,
-        skipAutoScale: true,
       });
+      if (!blob) throw new Error("Export returned empty image");
+
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `gwy-acceptance-${(name || "card").trim().toLowerCase().replace(/\s+/g, "-")}.png`;
+      a.style.display = "none";
       document.body.appendChild(a);
+
+      // Small delay helps Safari/macOS register the click/download.
+      await new Promise((resolve) => setTimeout(resolve, 50));
       a.click();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       a.remove();
+      URL.revokeObjectURL(url);
       toast.success("Your acceptance card is downloading ✨");
-    } catch {
+    } catch (err) {
+      console.error("Card download failed:", err);
       toast.error("Couldn't export the card. Try again.");
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -213,11 +224,16 @@ Because something tells me… this is going to be special.`;
         <button
           type="button"
           onClick={download}
-          className="group flex w-full items-center justify-center gap-3 rounded-full px-8 py-5 font-display text-lg tracking-wide uppercase text-primary-foreground transition hover:-translate-y-0.5"
+          disabled={downloading}
+          className="group flex w-full items-center justify-center gap-3 rounded-full px-8 py-5 font-display text-lg tracking-wide uppercase text-primary-foreground transition hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:translate-y-0"
           style={{ background: "var(--gradient-sunset)", boxShadow: "var(--shadow-luxe)" }}
         >
-          <Download className="h-5 w-5 transition group-hover:translate-y-0.5" />
-          Download your card
+          {downloading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Download className="h-5 w-5 transition group-hover:translate-y-0.5" />
+          )}
+          {downloading ? "Preparing..." : "Download your card"}
         </button>
 
         <div className="space-y-3">
