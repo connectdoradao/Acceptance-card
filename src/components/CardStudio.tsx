@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import { Check, Copy, Upload, Sparkles } from "lucide-react";
+import { toPng } from "html-to-image";
+import { Check, Copy, Download, Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AcceptanceCard, type CardData } from "./AcceptanceCard";
 
@@ -13,7 +14,7 @@ const ROLES = [
   "Product Manager",
 ];
 
-const BADGES = ["Top 10%", "Top 5%", "Wave 1 Fellow", "Island Original"];
+const BADGES = ["#YapQueens", "#MainCharacterMonth", "#GWYBaddies"];
 
 export function CardStudio() {
   const [name, setName] = useState("");
@@ -27,11 +28,29 @@ export function CardStudio() {
   const data: CardData = { name, role, line, avatar, badge };
 
   const captions = useMemo(() => {
-    const who = name || "I";
+    const core = `I don't think this has sunk in yet.
+
+I'm officially part of the GirlsWhoYap Fellowship 2.0.
+
+3,000 women.
+35 countries.
+One GWY island.
+
+For the next month, we're stepping into something that feels unreal,
+chaos, late-night builds, ideas turning into products, strangers turning into people you'll never forget.
+
+It feels like more than a program.
+It feels like being chosen for something that's about to matter.
+
+Grateful to be in the room.
+Because something tells me… this is going to be special.`;
+
+    const personal = line ? `\n\n${line}` : "";
+
     return {
-      LinkedIn: `Some doors don't open — they choose you.\n\nI've been accepted into the Girls Who Yap Fellowship 2.0 by DoraDAO as a ${role}, joining 3,000+ women across 18+ countries on a mission to educate and enable 100,000 girls in AI & internet skills.\n\n${line || "Grateful, focused, and ready to build."}\n\n${badge}\n#GirlsWhoYap #DoraDAO #GWYIsland`,
-      Twitter: `I didn't just apply. I got chosen. 🌅\n\nAccepted into Girls Who Yap Fellowship 2.0 as a ${role}. ${badge}.\n\nChaos starts on GWY Island.\n#GirlsWhoYap #DoraDAO`,
-      Instagram: `chosen. 🏝️✨\n\n${who} — Girls Who Yap Fellowship 2.0 · ${role} · ${badge}\n${line || "on a mission with 3,000+ women across 18+ countries."}\n\n#girlswhoyap #doradao #gwyisland #fellowship`,
+      LinkedIn: `${core}${personal}\n\nStepping in as a ${role}.\n\n${badge} #GirlsWhoYap #DoraDAO #GWYIsland`,
+      Twitter: `${core}${personal}\n\nStepping in as a ${role}. ${badge}`,
+      Instagram: `${core}${personal}\n\n${name ? `${name} · ` : ""}${role}\n\n${badge} #girlswhoyap #doradao #gwyisland`,
     } as Record<string, string>;
   }, [name, role, line, badge]);
 
@@ -40,6 +59,53 @@ export function CardStudio() {
     const reader = new FileReader();
     reader.onload = () => setAvatar(String(reader.result));
     reader.readAsDataURL(file);
+  };
+
+  const waitForExportAssets = async (node: HTMLElement) => {
+    await document.fonts?.ready;
+    const images = Array.from(node.querySelectorAll("img"));
+    await Promise.all(
+      images.map(
+        (image) =>
+          new Promise<void>((resolve) => {
+            if (image.complete && image.naturalWidth > 0) {
+              resolve();
+              return;
+            }
+
+            image.onload = () => resolve();
+            image.onerror = () => resolve();
+          }),
+      ),
+    );
+  };
+
+  const download = async () => {
+    const node = cardRef.current;
+    if (!node) return;
+    try {
+      await waitForExportAssets(node);
+      const cssWidth = node.getBoundingClientRect().width || 460;
+      const pixelRatio = Math.min(6, Math.max(3, 2400 / cssWidth));
+      const url = await toPng(node, {
+        pixelRatio,
+        width: cssWidth,
+        height: node.getBoundingClientRect().height,
+        cacheBust: true,
+        includeQueryParams: true,
+        backgroundColor: undefined,
+        skipAutoScale: true,
+      });
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gwy-acceptance-${(name || "card").trim().toLowerCase().replace(/\s+/g, "-")}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast.success("Your acceptance card is downloading ✨");
+    } catch {
+      toast.error("Couldn't export the card. Try again.");
+    }
   };
 
   const copy = async (key: string) => {
@@ -105,21 +171,54 @@ export function CardStudio() {
           />
         </div>
 
-        <div>
-          <label className="mb-2 block text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
-            Avatar <span className="opacity-60">(optional)</span>
-          </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-border bg-card px-5 py-4 text-sm text-muted-foreground transition hover:border-primary hover:text-foreground">
-            <Upload className="h-4 w-4" />
-            {avatar ? "Change photo" : "Upload a photo"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => onUpload(e.target.files?.[0])}
-            />
-          </label>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
+              Badge
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {BADGES.map((b) => (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => setBadge(b)}
+                  className={`rounded-full px-3.5 py-2 text-xs font-semibold tracking-wide transition ${
+                    badge === b
+                      ? "bg-ink text-primary-foreground"
+                      : "border border-border bg-card text-muted-foreground"
+                  }`}
+                >
+                  {b}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
+              Avatar <span className="opacity-60">(optional)</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-border bg-card px-5 py-4 text-sm text-muted-foreground transition hover:border-primary hover:text-foreground">
+              <Upload className="h-4 w-4" />
+              {avatar ? "Change photo" : "Upload a photo"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onUpload(e.target.files?.[0])}
+              />
+            </label>
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={download}
+          className="group flex w-full items-center justify-center gap-3 rounded-full px-8 py-5 font-display text-lg tracking-wide uppercase text-primary-foreground transition hover:-translate-y-0.5"
+          style={{ background: "var(--gradient-sunset)", boxShadow: "var(--shadow-luxe)" }}
+        >
+          <Download className="h-5 w-5 transition group-hover:translate-y-0.5" />
+          Download your card
+        </button>
 
         <div className="space-y-3">
           <p className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
