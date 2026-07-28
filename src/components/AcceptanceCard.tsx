@@ -41,14 +41,14 @@ export function AcceptanceCard({
         }}
       />
 
-      <div className="absolute inset-0 flex flex-col justify-between p-[6%] text-primary-foreground">
+      <div className="absolute inset-0 grid grid-rows-[auto_1fr_auto] p-[6%] text-primary-foreground">
         <div className="flex flex-col items-center">
           <img
             src={hostedBadge.url}
             alt="Hosted by DoraDAO"
             width={1440}
             height={322}
-            className="mb-[3.5%] w-[26%]"
+            className="mb-[3%] w-[24%]"
             style={{ filter: "drop-shadow(0 4px 12px oklch(0.2 0.05 40 / 0.35))" }}
             crossOrigin="anonymous"
           />
@@ -57,33 +57,33 @@ export function AcceptanceCard({
             alt="Girls Who Yap Fellowship 2.0"
             width={1474}
             height={354}
-            className="w-[84%] max-w-full"
+            className="w-[82%] max-w-full"
             style={{ filter: "drop-shadow(0 6px 18px oklch(0.2 0.05 40 / 0.45))" }}
             crossOrigin="anonymous"
           />
-          <p className="mt-[2%] text-center text-[clamp(0.45rem,1.7cqw,0.68rem)] font-medium italic opacity-90">
+          <p className="mt-[1.5%] text-center text-[clamp(0.42rem,1.6cqw,0.65rem)] font-medium italic opacity-90">
             On a mission to educate and enable 100,000 girls in AI &amp; internet skills.
           </p>
         </div>
 
-        <div className="flex flex-col items-center text-center">
+        <div className="flex min-h-0 flex-col items-center justify-center text-center">
           <div className="relative">
             {data.avatar ? (
               <img
                 src={data.avatar}
                 alt=""
-                className="aspect-square w-[38cqw] rounded-full object-cover"
+                className="aspect-square w-[32cqw] rounded-full object-cover"
                 style={{
-                  border: "4px solid oklch(0.99 0.02 85 / 0.9)",
-                  boxShadow: "0 18px 40px oklch(0.2 0.05 40 / 0.45)",
+                  border: "3px solid oklch(0.99 0.02 85 / 0.9)",
+                  boxShadow: "0 14px 34px oklch(0.2 0.05 40 / 0.45)",
                 }}
               />
             ) : (
               <div
-                className="flex aspect-square w-[38cqw] items-center justify-center rounded-full font-display text-[clamp(1.5rem,7cqw,2.6rem)]"
+                className="flex aspect-square w-[32cqw] items-center justify-center rounded-full font-display text-[clamp(1.25rem,6cqw,2.2rem)]"
                 style={{
                   background: "oklch(0.99 0.02 85 / 0.2)",
-                  border: "4px solid oklch(0.99 0.02 85 / 0.9)",
+                  border: "3px solid oklch(0.99 0.02 85 / 0.9)",
                   backdropFilter: "blur(4px)",
                 }}
               >
@@ -91,7 +91,7 @@ export function AcceptanceCard({
               </div>
             )}
             <span
-              className="absolute -bottom-1 left-1/2 max-w-[90%] -translate-x-1/2 truncate rounded-full px-3 py-1 text-[clamp(0.42rem,1.6cqw,0.65rem)] font-semibold tracking-[0.14em] uppercase"
+              className="absolute -bottom-1 left-1/2 max-w-[92%] -translate-x-1/2 truncate rounded-full px-2.5 py-0.5 text-[clamp(0.38rem,1.4cqw,0.58rem)] font-semibold tracking-[0.12em] uppercase"
               style={{
                 background: "oklch(0.99 0.02 85 / 0.95)",
                 color: "var(--ink)",
@@ -102,25 +102,25 @@ export function AcceptanceCard({
             </span>
           </div>
 
-          <p className="mt-[12%] text-[clamp(0.5rem,1.9cqw,0.78rem)] tracking-[0.35em] uppercase opacity-85">
+          <p className="mt-[4%] text-[clamp(0.48rem,1.8cqw,0.75rem)] tracking-[0.35em] uppercase opacity-85">
             Officially Accepted
           </p>
-          <h2 className="mt-[3%] min-w-0 font-display text-[clamp(1.6rem,8cqw,3.2rem)] leading-[1.05] break-words uppercase">
+          <h2 className="mt-[1.5%] min-w-0 font-display text-[clamp(1.5rem,7.5cqw,3rem)] leading-[1.0] break-words uppercase">
             {data.name || "Your Name"}
           </h2>
           <p
-            className="mt-[3%] rounded-full px-4 py-1 text-[clamp(0.6rem,2.2cqw,0.9rem)] font-semibold"
+            className="mt-[1.5%] rounded-full px-3.5 py-0.5 text-[clamp(0.55rem,2cqw,0.85rem)] font-semibold"
             style={{ background: "oklch(0.25 0.05 40 / 0.45)" }}
           >
             {data.role || "Builder"}
           </p>
-          <p className="mt-[5%] max-w-[90%] font-script text-[clamp(0.8rem,2.8cqw,1.2rem)] leading-snug opacity-95">
+          <p className="mt-[2%] max-w-[88%] font-script text-[clamp(0.75rem,2.6cqw,1.15rem)] leading-snug opacity-95">
             “{data.line || "You weren't just selected. You were chosen."}”
           </p>
         </div>
 
         <div
-          className="flex items-center justify-between gap-2 border-t pt-[3%] text-[clamp(0.5rem,1.8cqw,0.75rem)]"
+          className="flex items-center justify-between gap-2 border-t pt-[2.5%] text-[clamp(0.48rem,1.7cqw,0.72rem)]"
           style={{ borderColor: "oklch(0.99 0.02 85 / 0.28)" }}
         >
           <span className="font-semibold tracking-[0.08em]">www.doradao.xyz</span>
