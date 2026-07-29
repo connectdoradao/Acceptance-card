@@ -41,7 +41,7 @@ export function AcceptanceCard({
         }}
       />
 
-      <div className="absolute inset-0 grid grid-rows-[auto_1fr_auto] p-[6%] text-primary-foreground">
+      <div className="absolute inset-0 flex flex-col justify-between p-[6%] text-primary-foreground">
         <div className="flex flex-col items-center">
           <img
             src={hostedBadge.url}
@@ -66,7 +66,7 @@ export function AcceptanceCard({
           </p>
         </div>
 
-        <div className="flex min-h-0 flex-col items-center justify-center text-center">
+        <div className="flex flex-col items-center text-center">
           <div className="relative">
             {data.avatar ? (
               <img

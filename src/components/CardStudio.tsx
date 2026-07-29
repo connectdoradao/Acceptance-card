@@ -81,15 +81,72 @@ Because something tells me… this is going to be special.`;
     );
   };
 
+  const srcToDataUrl = async (src: string): Promise<string> => {
+    if (!src || src.startsWith("data:")) return src;
+    try {
+      const res = await fetch(src, { mode: "cors" });
+      if (!res.ok) return src;
+      const blob = await res.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return src;
+    }
+  };
+
+  const createExportClone = async (node: HTMLElement) => {
+    await waitForExportAssets(node);
+    const clone = node.cloneNode(true) as HTMLElement;
+    clone.style.width = `${node.getBoundingClientRect().width}px`;
+
+    // Inline all images as data URLs so Safari/iOS can't taint the canvas.
+    const originalImages = Array.from(node.querySelectorAll("img"));
+    const clonedImages = Array.from(clone.querySelectorAll("img"));
+    await Promise.all(
+      clonedImages.map(async (img, index) => {
+        const original = originalImages[index];
+        if (!original) return;
+        const dataUrl = await srcToDataUrl(original.src);
+        img.src = dataUrl;
+        img.crossOrigin = "anonymous";
+      }),
+    );
+
+    // Safari sometimes fails to render filters/backdrop-filter in canvas.
+    // Strip them from the export clone without affecting the live preview.
+    const filterElements = clone.querySelectorAll<HTMLElement>("*[style*='filter'], *[style*='backdropFilter']");
+    filterElements.forEach((el) => {
+      el.style.filter = "none";
+      el.style.backdropFilter = "none";
+    });
+
+    return clone;
+  };
+
   const download = async () => {
     const node = cardRef.current;
     if (!node || downloading) return;
     setDownloading(true);
+    let container: HTMLDivElement | null = null;
     try {
-      await waitForExportAssets(node);
+      const exportNode = await createExportClone(node);
+      container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.top = "-9999px";
+      container.style.left = "-9999px";
+      container.style.zIndex = "-9999";
+      container.style.opacity = "0";
+      container.style.pointerEvents = "none";
+      container.appendChild(exportNode);
+      document.body.appendChild(container);
+
       const cssWidth = node.getBoundingClientRect().width || 460;
-      const pixelRatio = Math.min(4, Math.max(2, 2400 / cssWidth));
-      const blob = await toBlob(node, {
+      const pixelRatio = Math.min(3, Math.max(2, 2400 / cssWidth));
+      const blob = await toBlob(exportNode, {
         pixelRatio,
         cacheBust: true,
         backgroundColor: undefined,
@@ -103,7 +160,7 @@ Because something tells me… this is going to be special.`;
       a.style.display = "none";
       document.body.appendChild(a);
 
-      // Small delay helps Safari/macOS register the click/download.
+      // Small delay helps Safari/iOS register the click/download.
       await new Promise((resolve) => setTimeout(resolve, 50));
       a.click();
       await new Promise((resolve) => setTimeout(resolve, 200));
@@ -115,6 +172,7 @@ Because something tells me… this is going to be special.`;
       console.error("Card download failed:", err);
       toast.error("Couldn't export the card. Try again.");
     } finally {
+      if (container) container.remove();
       setDownloading(false);
     }
   };
