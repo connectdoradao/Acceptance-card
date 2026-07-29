@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
+import html2canvas from "html2canvas";
 import { Check, Copy, Download, Loader2, Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AcceptanceCard, type CardData } from "./AcceptanceCard";
@@ -84,8 +85,11 @@ Because something tells me… this is going to be special.`;
   const srcToDataUrl = async (src: string): Promise<string> => {
     if (!src || src.startsWith("data:")) return src;
     try {
-      const res = await fetch(src, { mode: "cors" });
-      if (!res.ok) return src;
+      const res = await fetch(src, { credentials: "same-origin" });
+      if (!res.ok) {
+        console.warn(`[download] fetch ${src} returned ${res.status}`);
+        return src;
+      }
       const blob = await res.blob();
       return await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -93,7 +97,8 @@ Because something tells me… this is going to be special.`;
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-    } catch {
+    } catch (err) {
+      console.warn("[download] failed to inline image", src, err);
       return src;
     }
   };
@@ -116,6 +121,9 @@ Because something tells me… this is going to be special.`;
       }),
     );
 
+    // Wait for the cloned images (now data URLs) to decode before exporting.
+    await waitForExportAssets(clone);
+
     // Safari sometimes fails to render filters/backdrop-filter in canvas.
     // Strip them from the export clone without affecting the live preview.
     const filterElements = clone.querySelectorAll<HTMLElement>("*[style*='filter'], *[style*='backdropFilter']");
@@ -134,23 +142,55 @@ Because something tells me… this is going to be special.`;
     let container: HTMLDivElement | null = null;
     try {
       const exportNode = await createExportClone(node);
+
+      // Safari/iOS may skip painting elements with opacity:0 or that are
+      // too far off-screen. Keep the clone in the DOM at a tiny, near-transparent
+      // size so computed styles and images are fully resolved.
       container = document.createElement("div");
       container.style.position = "fixed";
-      container.style.top = "-9999px";
-      container.style.left = "-9999px";
-      container.style.zIndex = "-9999";
-      container.style.opacity = "0";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.width = "1px";
+      container.style.height = "1px";
+      container.style.overflow = "hidden";
+      container.style.opacity = "0.01";
       container.style.pointerEvents = "none";
+      container.style.zIndex = "-1";
       container.appendChild(exportNode);
       document.body.appendChild(container);
 
       const cssWidth = node.getBoundingClientRect().width || 460;
       const pixelRatio = Math.min(3, Math.max(2, 2400 / cssWidth));
-      const blob = await toBlob(exportNode, {
-        pixelRatio,
-        cacheBust: true,
-        backgroundColor: undefined,
-      });
+
+      // Try html-to-image first (best quality), then fall back to html2canvas
+      // which handles Safari/iOS canvas quirks more robustly.
+      let blob: Blob | null = null;
+      try {
+        blob = await toBlob(exportNode, {
+          pixelRatio,
+          cacheBust: true,
+          backgroundColor: undefined,
+        });
+      } catch (err) {
+        console.warn("[download] html-to-image failed, trying html2canvas", err);
+      }
+
+      if (!blob) {
+        try {
+          const canvas = await html2canvas(exportNode, {
+            useCORS: true,
+            scale: pixelRatio,
+            backgroundColor: null,
+            logging: false,
+          });
+          blob = await new Promise<Blob | null>((resolve) =>
+            canvas.toBlob((b) => resolve(b), "image/png"),
+          );
+        } catch (err) {
+          console.warn("[download] html2canvas also failed", err);
+        }
+      }
+
       if (!blob) throw new Error("Export returned empty image");
 
       const url = URL.createObjectURL(blob);
